@@ -19,5 +19,6 @@ from urlShortenerApp import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.index, name='index')
+    path('', views.index, name='index'),
+    path('<slug:shortened_url>', views.redirect_to_url, name='redirect_to_url')
 ]

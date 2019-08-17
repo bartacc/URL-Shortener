@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -17,7 +17,7 @@ def index(request):
         context['form'] = form
         if form.is_valid():
             provided_url = form.cleaned_data['urlField']
-            url_in_database = find_url_in_database(provided_url)
+            url_in_database = _find_url_in_database(url=provided_url)
             if(url_in_database is None):
                 shortened_url = uuid(name=provided_url)[:10]
                 new_url_in_database = URL(url=provided_url, hashed_url=shortened_url)
@@ -33,10 +33,25 @@ def index(request):
 
     return render(request, 'urlShortenerApp/index.html', context)
 
-"Return URL model object from database or None if non-existent"
-def find_url_in_database(url):
+
+def redirect_to_url(request, shortened_url):
+    url_in_database = _find_url_in_database(shortened_url=shortened_url)
+    if(url_in_database is None):
+        return redirect('index')
+    else:
+        original_url = url_in_database.url
+        return redirect(original_url)
+    
+"Return URL model object from database or None if non-existent. Provide either url or shortened_url to be searched"
+def _find_url_in_database(url='', shortened_url=''):
+    url_in_database = None
     try:
-        url_in_database = URL.objects.get(url=url)
+        if url:
+            url_in_database = URL.objects.get(url=url)
+            print("Searching for URL in database: " + url)
+        elif shortened_url:
+            url_in_database = URL.objects.get(hashed_url=shortened_url)
+            print("Searching for URL in database: " + shortened_url)
     except ObjectDoesNotExist:
         url_in_database = None
     finally:
